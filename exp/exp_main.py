@@ -119,6 +119,8 @@ class Exp_Main(Exp_Basic):
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
 
+        val_loss_list = []
+
         for epoch in range(self.args.train_epochs):
             iter_count = 0
             train_loss = []
@@ -160,6 +162,8 @@ class Exp_Main(Exp_Basic):
             vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
 
+            val_loss_list.append(vali_loss)
+
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
             early_stopping(vali_loss, self.model, path)
@@ -172,8 +176,10 @@ class Exp_Main(Exp_Basic):
         best_model_path = path + '/' + 'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
 
-        return
+        average_val_loss = np.mean(val_loss_list) 
+        return average_val_loss
 
+    
     def test(self, setting, test=0):
         test_data, test_loader = self._get_data(flag='test')
         if test:
